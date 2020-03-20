@@ -1,9 +1,18 @@
 FROM php:7.3-fpm
 
-WORKDIR /app
+RUN apt-get update && buildDeps="nginx libpq-dev libzip-dev gnupg acl git curl nano wget libpng-dev python-dev libgmp-dev ssh rsync libxml2-dev libmcrypt-dev" && apt-get install -y $buildDeps --no-install-recommends
+RUN curl -sL https://deb.nodesource.com/setup_8.x -o nodesource_setup.sh && chmod +x nodesource_setup.sh && bash nodesource_setup.sh
+RUN apt-get update && buildDeps="nodejs" && apt-get install -y $buildDeps --no-install-recommends
+RUN docker-php-ext-install pdo pdo_pgsql zip bcmath gd calendar gmp pcntl soap sockets && pecl install -o -f mcrypt-1.0.2 && docker-php-ext-enable mcrypt
+RUN npm install -g yarn
+RUN npm install -g bower
+RUN npm install -g gulp
 
-RUN apt-get update
-RUN apt-get install -y wget libpq-dev git curl libzip-dev zip ssh rsync libxml2-dev nano acl gnupg libpng-dev
 RUN wget https://getcomposer.org/composer.phar && mv composer.phar /usr/bin/composer && chmod +x /usr/bin/composer
-RUN docker-php-ext-install pcntl pdo pdo_pgsql sockets bcmath zip gd calendar
-RUN pecl install -o -f redis && rm -rf /tmp/pear && docker-php-ext-enable redis
+RUN wget https://github.com/FriendsOfPHP/PHP-CS-Fixer/releases/download/v2.10.3/php-cs-fixer.phar -O php-cs-fixer && chmod a+x php-cs-fixer && mv php-cs-fixer /usr/local/bin/php-cs-fixer
+RUN composer global require phing/phing
+RUN composer global require phpstan/phpstan
+
+RUN apt-get install -y libsqlite3-dev ruby-full rubygems build-essential && gem install mailcatcher && mailcatcher
+RUN echo "memory_limit=-1" > /usr/local/etc/php/conf.d/docker-php-memorylimit.ini
+WORKDIR /app
